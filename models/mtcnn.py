@@ -131,6 +131,9 @@ class ONet(nn.Module):
             state_dict_path = os.path.join(os.path.dirname(__file__), '../data/onet.pt')
             state_dict = torch.load(state_dict_path)
             self.load_state_dict(state_dict)
+        
+        self.dense6_age = nn.Linear(256, 1)    # age estimation task
+        self.dense6_isChild = nn.Linear(256, 2)    # child classification task
 
     def forward(self, x):
         x = self.conv1(x)
