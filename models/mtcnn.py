@@ -132,7 +132,8 @@ class ONet(nn.Module):
             state_dict = torch.load(state_dict_path)
             self.load_state_dict(state_dict)
         
-        self.dense6_age = nn.Linear(256, 1)    # age estimation task
+        # not doing the age estimation task for the sake of simplicity
+        #self.dense6_age = nn.Linear(256, 1)    # age estimation task
         self.dense6_isChild = nn.Linear(256, 2)    # child classification task
 
     def forward(self, x):
@@ -154,6 +155,11 @@ class ONet(nn.Module):
         a = self.softmax6_1(a)
         b = self.dense6_2(x)
         c = self.dense6_3(x)
+        
+        # d: child classification task
+        d = self.dense6_isChild(x)
+        
+        # need to modify this return line to include task d
         return b, c, a
 
 
@@ -214,6 +220,7 @@ class MTCNN(nn.Module):
             self.device = device
             self.to(device)
 
+    # this function is NOT useful for training (see MTCNN.detect() below)
     def forward(self, img, save_path=None, return_prob=False):
         """Run MTCNN face detection on a PIL image or numpy array. This method performs both
         detection and extraction of faces, returning tensors representing detected faces rather
@@ -305,6 +312,8 @@ class MTCNN(nn.Module):
         else:
             return faces
 
+    # this function should be used for training
+    # returns a tuple: (bounding box, probability)
     def detect(self, img, landmarks=False):
         """Detect all faces in PIL image and return bounding boxes and optional facial landmarks.
 
@@ -345,6 +354,8 @@ class MTCNN(nn.Module):
         >>> img_draw.save('annotated_faces.png')
         """
 
+        # must remove torch.no_grad()
+        # or else can't run backpropagation
         with torch.no_grad():
             batch_boxes, batch_points = detect_face(
                 img, self.min_face_size,
