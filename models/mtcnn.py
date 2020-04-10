@@ -160,7 +160,7 @@ class ONet(nn.Module):
         d = self.dense6_isChild(x)
         
         # need to modify this return line to include task d
-        return b, c, a
+        return b, c, a, d
 
 
 class MTCNN(nn.Module):
@@ -220,101 +220,11 @@ class MTCNN(nn.Module):
             self.device = device
             self.to(device)
 
-    # this function is NOT useful for training (see MTCNN.detect() below)
-    def forward(self, img, save_path=None, return_prob=False):
-        """Run MTCNN face detection on a PIL image or numpy array. This method performs both
-        detection and extraction of faces, returning tensors representing detected faces rather
-        than the bounding boxes. To access bounding boxes, see the MTCNN.detect() method below.
-        
-        Arguments:
-            img {PIL.Image, np.ndarray, or list} -- A PIL image, np.ndarray, or list.
-        
-        Keyword Arguments:
-            save_path {str} -- An optional save path for the cropped image. Note that when
-                self.post_process=True, although the returned tensor is post processed, the saved
-                face image is not, so it is a true representation of the face in the input image.
-                If `img` is a list of images, `save_path` should be a list of equal length.
-                (default: {None})
-            return_prob {bool} -- Whether or not to return the detection probability.
-                (default: {False})
-        
-        Returns:
-            Union[torch.Tensor, tuple(torch.tensor, float)] -- If detected, cropped image of a face
-                with dimensions 3 x image_size x image_size. Optionally, the probability that a
-                face was detected. If self.keep_all is True, n detected faces are returned in an
-                n x 3 x image_size x image_size tensor with an optional list of detection
-                probabilities. If `img` is a list of images, the item(s) returned have an extra 
-                dimension (batch) as the first dimension.
-
-        Example:
-        >>> from facenet_pytorch import MTCNN
-        >>> mtcnn = MTCNN()
-        >>> face_tensor, prob = mtcnn(img, save_path='face.png', return_prob=True)
-        """
-
-        # Detect faces
-        with torch.no_grad():
-            batch_boxes, batch_probs = self.detect(img)
-
-        # Determine if a batch or single image was passed
-        batch_mode = True
-        if not isinstance(img, (list, tuple)) and not (isinstance(img, np.ndarray) and len(img.shape) == 4):
-            img = [img]
-            batch_boxes = [batch_boxes]
-            batch_probs = [batch_probs]
-            batch_mode = False
-
-        # Parse save path(s)
-        if save_path is not None:
-            if isinstance(save_path, str):
-                save_path = [save_path]
-        else:
-            save_path = [None for _ in range(len(img))]
-        
-        # Process all bounding boxes and probabilities
-        faces, probs = [], []
-        for im, box_im, prob_im, path_im in zip(img, batch_boxes, batch_probs, save_path):
-            if box_im is None:
-                faces.append(None)
-                probs.append([None] if self.keep_all else None)
-                continue
-
-            if not self.keep_all:
-                box_im = box_im[[0]]
-
-            faces_im = []
-            for i, box in enumerate(box_im):
-                face_path = path_im
-                if path_im is not None and i > 0:
-                    save_name, ext = os.path.splitext(path_im)
-                    face_path = save_name + '_' + str(i + 1) + ext
-
-                face = extract_face(im, box, self.image_size, self.margin, face_path)
-                if self.post_process:
-                    face = fixed_image_standardization(face)
-                faces_im.append(face)
-
-            if self.keep_all:
-                faces_im = torch.stack(faces_im)
-            else:
-                faces_im = faces_im[0]
-                prob_im = prob_im[0]
-            
-            faces.append(faces_im)
-            probs.append(prob_im)
     
-        if not batch_mode:
-            faces = faces[0]
-            probs = probs[0]
-
-        if return_prob:
-            return faces, probs
-        else:
-            return faces
-
     # this function should be used for training
     # returns a tuple: (bounding box, probability)
-    def detect(self, img, landmarks=False):
+    # renamed from detect() to forward()
+    def forward(self, img, landmarks=False, eval_mode=False):
         """Detect all faces in PIL image and return bounding boxes and optional facial landmarks.
 
         This method is used by the forward method and is also useful for face detection tasks
@@ -328,6 +238,7 @@ class MTCNN(nn.Module):
         Keyword Arguments:
             landmarks {bool} -- Whether to return facial landmarks in addition to bounding boxes.
                 (default: {False})
+            eval_mode {bool} -- Whether mtcnn is running in evaluation mode or training mode
         
         Returns:
             tuple(numpy.ndarray, list) -- For N detected faces, a tuple containing an
@@ -353,16 +264,23 @@ class MTCNN(nn.Module):
         ...     extract_face(img, box, save_path='detected_face_{}.png'.format(i))
         >>> img_draw.save('annotated_faces.png')
         """
-
-        # must remove torch.no_grad()
-        # or else can't run backpropagation
-        with torch.no_grad():
+        batch_boxes, batch_points = None, None
+        
+        if eval_mode:
+            with torch.no_grad():
+                batch_boxes, batch_points = detect_face(
+                    img, self.min_face_size,
+                    self.pnet, self.rnet, self.onet,
+                    self.thresholds, self.factor,
+                    self.device
+                )
+        else:
             batch_boxes, batch_points = detect_face(
-                img, self.min_face_size,
-                self.pnet, self.rnet, self.onet,
-                self.thresholds, self.factor,
-                self.device
-            )
+                    img, self.min_face_size,
+                    self.pnet, self.rnet, self.onet,
+                    self.thresholds, self.factor,
+                    self.device
+                )
 
         boxes, probs, points = [], [], []
         for box, point in zip(batch_boxes, batch_points):

@@ -10,13 +10,17 @@ from glob import glob
 # Libs
 import numpy as np
 from tqdm import tqdm
-from skimage import io, color, transform
+from skimage import io, color
+import skimage.transform as sktrsfm
 from sklearn.metrics import precision_score, recall_score
 
 # Pytorch
 import torch
 import torch.nn.functional as F
 from torch.utils import data
+
+import torchvision
+from torchvision import transforms
 
 # Own modules
 
@@ -38,28 +42,8 @@ class UTKDataLoader(data.Dataset):
         return img, torch.tensor(lbl)
 
 
-class UTKDataLoaderDistill(data.Dataset):
-    def __init__(self, img, lbl, size_s=32, tsfm=None):
-        self.img = img
-        self.lbl = lbl
-        self.resize = (size_s, size_s)
-        self.transforms = tsfm
-
-    def __len__(self):
-        return len(self.img)
-
-    def __getitem__(self, index):
-        img = self.img[index]
-        img_s = transform.resize(img, self.resize).astype(np.uint8)
-        lbl = self.lbl[index]
-        if self.transforms:
-            img = self.transforms(img)
-            img_s = self.transforms(img_s)
-        return img, img_s, torch.tensor(lbl)
-
-
 def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.2, resize_shape=(32, 32)):
-    img_files = sorted(glob(os.path.join(parent_path, '*.jpg')))
+    img_files = sorted(glob(os.path.join(parent_path, '*.jpg')))[:500]
     imgs, ages = [], []
     age_thresh = [-1, *age_thresh, 200]
     for img_file in tqdm(img_files):
@@ -67,8 +51,8 @@ def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.2, r
         if img.shape[-1] == 1:
             img = color.grey2rgb(img)
         age = int(os.path.splitext(os.path.basename(img_file))[0].split('_')[0])
-        img = transform.resize(img, resize_shape, anti_aliasing=True, preserve_range=True)[..., :3]
-        imgs.append(img.astype(np.uint8))
+        img = sktrsfm.resize(img, resize_shape, anti_aliasing=True, preserve_range=True)[..., :3]
+        imgs.append(torchvision.transforms.ToPILImage()(img.astype(np.uint8)))
 
         for cnt, (lb, ub) in enumerate(zip(age_thresh[:-1], age_thresh[1:])):
             if lb < age <= ub:

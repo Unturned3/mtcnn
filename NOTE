@@ -1,0 +1,7 @@
+
+# disable bracket matching in jupyter notebook:
+
+# Run this in Python once, it should take effect permanently
+from notebook.services.config import ConfigManager
+c = ConfigManager()
+c.update('notebook', {"CodeCell": {"cm_config": {"autoCloseBrackets": False}}})
