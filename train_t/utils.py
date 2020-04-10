@@ -52,6 +52,8 @@ def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.2, r
             img = color.grey2rgb(img)
         age = int(os.path.splitext(os.path.basename(img_file))[0].split('_')[0])
         img = sktrsfm.resize(img, resize_shape, anti_aliasing=True, preserve_range=True)[..., :3]
+        
+        # convert to PIL image, so code can use MTCNN to do processing stuff
         imgs.append(torchvision.transforms.ToPILImage()(img.astype(np.uint8)))
 
         for cnt, (lb, ub) in enumerate(zip(age_thresh[:-1], age_thresh[1:])):
