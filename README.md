@@ -1,6 +1,3 @@
-# NOTE
-This branch is for testing how to use mtcnn to label the training image data with bbox coords and face probability.
-
 # Face Recognition Using Pytorch 
 [![Downloads](https://pepy.tech/badge/facenet-pytorch)](https://pepy.tech/project/facenet-pytorch)
 
