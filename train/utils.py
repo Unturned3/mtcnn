@@ -39,13 +39,14 @@ class UTK_dataset(data.Dataset):
         bbox, prob, landmarks = self.bbox[idx], self.prob[idx], self.landmarks[idx]
         if self.transforms:
             img = self.transforms(img)
-        return img, torch.tensor(age), torch.tensor(bbox), torch.tensor(prob), torch.tensor(landmarks)
+        #return img, torch.tensor(age), torch.tensor(bbox), torch.tensor(prob), torch.tensor(landmarks)
+        return img, torch.tensor(age), torch.tensor(bbox), torch.tensor(landmarks)
 
 
 def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, resize_shape=(32, 32)):
     
     # only *.chip.jpg is supported; No facial bbox, landmark, and probs provided for other images.
-    img_files = sorted(glob(os.path.join(parent_path, '*.chip.jpg')))[:5]
+    img_files = sorted(glob(os.path.join(parent_path, '*.chip.jpg')))[:1000]
     
     imgs, ages, fn, bbox, prob, landmarks = [], [], [], [], [], [] # fn: file names
     
@@ -66,6 +67,9 @@ def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, r
         
         bbox.append(t_bbox[0])
         prob.append(t_prob)
+        if t_prob.shape == np.shape([1]):
+            print("##### ERROR #####")
+        
         landmarks.append(t_landmarks)
         
         img = io.imread(img_file)
@@ -95,7 +99,7 @@ def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, r
     """
     
     # debug printout
-    print("Ignored: ")
+    print("Ignored images: ")
     for s in ign_list:
         print(s)
     
