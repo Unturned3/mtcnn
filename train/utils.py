@@ -43,7 +43,7 @@ class UTKDataLoader(data.Dataset):
 
 
 def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.2, resize_shape=(32, 32)):
-    img_files = sorted(glob(os.path.join(parent_path, '*.chip.jpg')))[:5]
+    img_files = sorted(glob(os.path.join(parent_path, '*.chip.jpg')))
     imgs, ages = [], []
     fn = []  # debug. for storing filenames
     age_thresh = [-1, *age_thresh, 200]
