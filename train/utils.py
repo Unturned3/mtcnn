@@ -25,27 +25,27 @@ from torchvision import transforms
 # Own modules
 
 
-class UTKDataLoader(data.Dataset):
-    def __init__(self, img, lbl, tsfm=None):
-        self.img = img
-        self.lbl = lbl
-        self.transforms = tsfm
-
+class UTK_dataset(data.Dataset):
+    def __init__(self, img, age, bbox, prob, landmarks, trsfm=None):
+        self.img, self.age = img, age
+        self.bbox, self.prob, self.landmarks = bbox, prob, landmarks
+        self.transforms = trsfm
+    
     def __len__(self):
         return len(self.img)
-
-    def __getitem__(self, index):
-        img = self.img[index]
-        lbl = self.lbl[index]
+    
+    def __getitem__(self, idx):
+        img, age = self.img[idx], self.age[idx]
+        bbox, prob, landmarks = self.bbox[idx], self.prob[idx], self.landmarks[idx]
         if self.transforms:
             img = self.transforms(img)
-        return img, torch.tensor(lbl)
+        return img, torch.tensor(age), torch.tensor(bbox), torch.tensor(prob), torch.tensor(landmarks)
 
 
 def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, resize_shape=(32, 32)):
     
     # only *.chip.jpg is supported; No facial bbox, landmark, and probs provided for other images.
-    img_files = sorted(glob(os.path.join(parent_path, '*.chip.jpg')))
+    img_files = sorted(glob(os.path.join(parent_path, '*.chip.jpg')))[:500]
     
     imgs, ages, fn, bbox, prob, landmarks = [], [], [], [], [], [] # fn: file names
     
