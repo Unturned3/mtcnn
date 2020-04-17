@@ -45,7 +45,7 @@ class UTK_dataset(data.Dataset):
 def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, resize_shape=(32, 32)):
     
     # only *.chip.jpg is supported; No facial bbox, landmark, and probs provided for other images.
-    img_files = sorted(glob(os.path.join(parent_path, '*.chip.jpg')))[:500]
+    img_files = sorted(glob(os.path.join(parent_path, '*.chip.jpg')))[:5]
     
     imgs, ages, fn, bbox, prob, landmarks = [], [], [], [], [], [] # fn: file names
     
@@ -64,7 +64,7 @@ def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, r
             ign_list.append(os.path.basename(img_file))
             continue # ignore this image; do not load
         
-        bbox.append(t_bbox)
+        bbox.append(t_bbox[0])
         prob.append(t_prob)
         landmarks.append(t_landmarks)
         
