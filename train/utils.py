@@ -68,8 +68,7 @@ def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, r
         bbox.append(t_bbox[0])
         prob.append(t_prob)
         
-        landmarks.append(t_landmarks)
-        print(t_landmarks.shape)
+        landmarks.append(t_landmarks[0])
         
         img = io.imread(img_file)
         if img.shape[-1] == 1:
