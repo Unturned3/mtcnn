@@ -40,7 +40,7 @@ class UTK_dataset(data.Dataset):
         if self.transforms:
             img = self.transforms(img)
         #return img, torch.tensor(age), torch.tensor(bbox), torch.tensor(prob), torch.tensor(landmarks)
-        return img, torch.tensor(age), torch.tensor(bbox), torch.tensor(landmarks)
+        return img, torch.tensor(age), torch.tensor(bbox), torch.tensor(prob), torch.tensor(landmarks)
 
 
 def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, resize_shape=(32, 32)):
@@ -67,10 +67,9 @@ def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, r
         
         bbox.append(t_bbox[0])
         prob.append(t_prob)
-        if t_prob.shape == np.shape([1]):
-            print("##### ERROR #####")
         
         landmarks.append(t_landmarks)
+        print(t_landmarks.shape)
         
         img = io.imread(img_file)
         if img.shape[-1] == 1:
