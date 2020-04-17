@@ -43,10 +43,10 @@ class UTK_dataset(data.Dataset):
         return img, torch.tensor(age), torch.tensor(bbox), torch.tensor(prob), torch.tensor(landmarks)
 
 
-def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, resize_shape=(32, 32)):
+def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, resize_shape=(32, 32), label_mode=False):
     
     # only *.chip.jpg is supported; No facial bbox, landmark, and probs provided for other images.
-    img_files = sorted(glob(os.path.join(parent_path, '*.chip.jpg')))[:1000]
+    img_files = sorted(glob(os.path.join(parent_path, '*.chip.jpg')))[:500]
     
     imgs, ages, fn, bbox, prob, landmarks = [], [], [], [], [], [] # fn: file names
     
@@ -56,19 +56,19 @@ def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, r
     
     for img_file in tqdm(img_files):
         
-        # read face bbox, prob, and landmarks for each image
-        t_bbox = np.load(img_file+".bbox.npy")
-        t_prob = np.load(img_file+".prob.npy")
-        t_landmarks = np.load(img_file+".landmarks.npy")
-        
-        if np.array_equal(t_bbox, [0,0,0,0]):
-            ign_list.append(os.path.basename(img_file))
-            continue # ignore this image; do not load
-        
-        bbox.append(t_bbox[0])
-        prob.append(t_prob)
-        
-        landmarks.append(t_landmarks[0])
+        if label_mode == False:
+            # read face bbox, prob, and landmarks for each image
+            t_bbox = np.load(img_file+".bbox.npy")
+            t_prob = np.load(img_file+".prob.npy")
+            t_landmarks = np.load(img_file+".landmarks.npy")
+
+            if np.array_equal(t_bbox, [0,0,0,0]):
+                ign_list.append(os.path.basename(img_file))
+                continue # ignore this image; do not load
+
+            bbox.append(t_bbox[0])
+            prob.append(t_prob)
+            landmarks.append(t_landmarks[0])
         
         img = io.imread(img_file)
         if img.shape[-1] == 1:
@@ -102,8 +102,10 @@ def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, r
         print(s)
     
     vn = int(np.floor(len(imgs) * valid_percent))
-    return imgs[vn:], ages[vn:], fn[vn:], bbox[vn:], prob[vn:], landmarks[vn:], imgs[:vn], ages[:vn], fn[:vn], bbox[:vn], prob[:vn], landmarks[:vn]
-    # return imgs, ages, imgs, ages, fn
+    if label_mode == False:
+        return imgs[vn:], ages[vn:], fn[vn:], bbox[vn:], prob[vn:], landmarks[vn:], imgs[:vn], ages[:vn], fn[:vn], bbox[:vn], prob[:vn], landmarks[:vn]
+    else:
+        return imgs, ages, fn
 
 
 def f1_score(truth, pred, eval_class):
