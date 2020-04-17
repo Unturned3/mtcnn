@@ -151,10 +151,10 @@ class ONet(nn.Module):
         x = x.permute(0, 3, 2, 1).contiguous()
         x = self.dense5(x.view(x.shape[0], -1))
         x = self.prelu5(x)
-        a = self.dense6_1(x)
+        a = self.dense6_1(x) # prob
         a = self.softmax6_1(a)
-        b = self.dense6_2(x)
-        c = self.dense6_3(x)
+        b = self.dense6_2(x) # bbox
+        c = self.dense6_3(x) # landmarks
         
         # d: child classification task
         d = self.dense6_isChild(x)

@@ -114,9 +114,13 @@ def detect_face(imgs, minsize, pnet, rnet, onet, threshold, factor, device):
         im_data = (im_data - 127.5) * 0.0078125
         out = onet(im_data)
 
-        out0 = out[0].permute(1, 0)
-        out1 = out[1].permute(1, 0)
-        out2 = out[2].permute(1, 0)
+        out0 = out[0].permute(1, 0) # out[0]: bbox
+        out1 = out[1].permute(1, 0) # out[1]: landmarks
+        out2 = out[2].permute(1, 0) # out[2]: prob
+        
+        # note: out[3] is the output of isChild
+        
+        
         score = out2[1, :]
         points = out1
         ipass = score > threshold[2]

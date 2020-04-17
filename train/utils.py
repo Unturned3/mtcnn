@@ -43,9 +43,9 @@ class UTKDataLoader(data.Dataset):
 
 
 def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.2, resize_shape=(32, 32)):
-    img_files = sorted(glob(os.path.join(parent_path, '*.chip.jpg')))
+    img_files = sorted(glob(os.path.join(parent_path, '*.chip.jpg')))[:5]
     imgs, ages = [], []
-    #fn = []  # debug. for storing filenames
+    fn = []  # debug. for storing filenames
     age_thresh = [-1, *age_thresh, 200]
     for img_file in tqdm(img_files):
         img = io.imread(img_file)
@@ -54,7 +54,9 @@ def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.2, r
         age = int(os.path.splitext(os.path.basename(img_file))[0].split('_')[0])
         img = sktrsfm.resize(img, resize_shape, anti_aliasing=True, preserve_range=True)[..., :3]
         imgs.append(torchvision.transforms.ToPILImage()(img.astype(np.uint8)))
-        #fn.append(os.path.basename(img_file))
+        fn.append(img_file)
+        
+        # add code here to read face bbox & probs for each image
 
         for cnt, (lb, ub) in enumerate(zip(age_thresh[:-1], age_thresh[1:])):
             if lb < age <= ub:
@@ -65,8 +67,8 @@ def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.2, r
     #imgs = [imgs[a] for a in rand_idx]
     #ages = [ages[a] for a in rand_idx]
     valid_num = int(np.floor(len(imgs) * valid_percent))
-    return imgs[valid_num:], ages[valid_num:], imgs[:valid_num], ages[:valid_num], fn
-    #return imgs, ages, imgs, ages, fn
+    #return imgs[valid_num:], ages[valid_num:], imgs[:valid_num], ages[:valid_num]
+    return imgs, ages, imgs, ages, fn
 
 
 def f1_score(truth, pred, eval_class):
