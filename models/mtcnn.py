@@ -132,9 +132,10 @@ class ONet(nn.Module):
             state_dict = torch.load(state_dict_path)
             self.load_state_dict(state_dict)
         
-        # not doing the age estimation task for the sake of simplicity
-        #self.dense6_age = nn.Linear(256, 1)    # age estimation task
-        self.dense6_isChild = nn.Linear(256, 2)    # child classification task
+        # TODO: change the 6 to a hyperparameter, for ease of code reuse
+        
+        self.dense6_age = nn.Linear(256, 6)    # age estimation task
+        #self.dense6_isChild = nn.Linear(256, 2)    # child classification task
 
     def forward(self, x):
         x = self.conv1(x)
@@ -156,8 +157,8 @@ class ONet(nn.Module):
         b = self.dense6_2(x) # bbox
         c = self.dense6_3(x) # landmarks
         
-        # d: child classification task
-        d = self.dense6_isChild(x)
+        # d: age classification task
+        d = self.dense6_age(x)
         
         # need to modify this return line to include task d
         return b, c, a, d
