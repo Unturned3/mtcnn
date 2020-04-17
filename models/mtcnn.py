@@ -125,7 +125,7 @@ class ONet(nn.Module):
         self.dense6_2 = nn.Linear(256, 4)
         self.dense6_3 = nn.Linear(256, 10)
 
-        self.training = False
+        #self.training = False
 
         if pretrained:
             state_dict_path = os.path.join(os.path.dirname(__file__), '../data/onet.pt')
