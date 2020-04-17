@@ -42,33 +42,58 @@ class UTKDataLoader(data.Dataset):
         return img, torch.tensor(lbl)
 
 
-def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.2, resize_shape=(32, 32)):
+def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, resize_shape=(32, 32)):
+    
+    # only *.chip.jpg is supported; No facial bbox, landmark, and probs provided for other images.
     img_files = sorted(glob(os.path.join(parent_path, '*.chip.jpg')))
-    imgs, ages = [], []
-    fn = []  # debug. for storing filenames
+    
+    imgs, ages fn, bbox, prob, landmarks = [], [], [], [], [], [] # fn: file names
+    
     age_thresh = [-1, *age_thresh, 200]
+    
     for img_file in tqdm(img_files):
+        
+        # read face bbox, prob, and landmarks for each image
+        t_bbox = np.load(img_file+".bbox.npy")
+        t_prob = np.load(img_file+".prob.npy")
+        t_landmarks = np.load(img_file+".landmarks.npy")
+        
+        if np.array_equal(t_bbox, [0,0,0,0]):
+            continue # ignore this image; do not load
+        
+        bbox.append(t_bbox)
+        prob.append(t_prob)
+        landmarks.append(t_landmarks)
+        
         img = io.imread(img_file)
         if img.shape[-1] == 1:
             img = color.grey2rgb(img)
+        
         age = int(os.path.splitext(os.path.basename(img_file))[0].split('_')[0])
         img = sktrsfm.resize(img, resize_shape, anti_aliasing=True, preserve_range=True)[..., :3]
+        
         imgs.append(torchvision.transforms.ToPILImage()(img.astype(np.uint8)))
         fn.append(img_file)
-        
-        # add code here to read face bbox & probs for each image
 
         for cnt, (lb, ub) in enumerate(zip(age_thresh[:-1], age_thresh[1:])):
             if lb < age <= ub:
                 ages.append(cnt)
                 break
+    
     # temporarily disable randomization for dataset
-    #rand_idx = np.random.permutation(np.arange(len(img_files)))
-    #imgs = [imgs[a] for a in rand_idx]
-    #ages = [ages[a] for a in rand_idx]
-    valid_num = int(np.floor(len(imgs) * valid_percent))
-    #return imgs[valid_num:], ages[valid_num:], imgs[:valid_num], ages[:valid_num]
-    return imgs, ages, imgs, ages, fn
+    """
+    rand_idx = np.random.permutation(np.arange(len(img_files)))
+    imgs = [imgs[a] for a in rand_idx]
+    ages = [ages[a] for a in rand_idx]
+    fn = [fn[a] for a in rand_idx]
+    bbox = [bbox[a] for a in rand_idx]
+    prob = [prob[a] for a in rand_idx]
+    landmarks = [landmarks[a] for a in rand_idx]
+    """
+    
+    vn = int(np.floor(len(imgs) * valid_percent))
+    return imgs[vn:], ages[vn:], fn[vn:], bbox[vn:], prob[vn:], landmarks[vn:], imgs[:vn], ages[:vn], fn[:vn], bbox[:vn], prob[:vn], landmarks[:vn]
+    # return imgs, ages, imgs, ages, fn
 
 
 def f1_score(truth, pred, eval_class):
