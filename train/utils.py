@@ -47,7 +47,9 @@ def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, r
     # only *.chip.jpg is supported; No facial bbox, landmark, and probs provided for other images.
     img_files = sorted(glob(os.path.join(parent_path, '*.chip.jpg')))
     
-    imgs, ages fn, bbox, prob, landmarks = [], [], [], [], [], [] # fn: file names
+    imgs, ages, fn, bbox, prob, landmarks = [], [], [], [], [], [] # fn: file names
+    
+    ign_list = [] # list of files that were ignored
     
     age_thresh = [-1, *age_thresh, 200]
     
@@ -59,6 +61,7 @@ def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, r
         t_landmarks = np.load(img_file+".landmarks.npy")
         
         if np.array_equal(t_bbox, [0,0,0,0]):
+            ign_list.append(os.path.basename(img_file))
             continue # ignore this image; do not load
         
         bbox.append(t_bbox)
@@ -90,6 +93,11 @@ def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, r
     prob = [prob[a] for a in rand_idx]
     landmarks = [landmarks[a] for a in rand_idx]
     """
+    
+    # debug printout
+    print("Ignored: ")
+    for s in ign_list:
+        print(s)
     
     vn = int(np.floor(len(imgs) * valid_percent))
     return imgs[vn:], ages[vn:], fn[vn:], bbox[vn:], prob[vn:], landmarks[vn:], imgs[:vn], ages[:vn], fn[:vn], bbox[:vn], prob[:vn], landmarks[:vn]
