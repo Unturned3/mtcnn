@@ -1,3 +1,6 @@
+
+note: this repo is forked from https://github.com/timesler/facenet-pytorch
+
 # Face Recognition Using Pytorch 
 [![Downloads](https://pepy.tech/badge/facenet-pytorch)](https://pepy.tech/project/facenet-pytorch)
 
