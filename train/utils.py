@@ -43,10 +43,10 @@ class UTK_dataset(data.Dataset):
         return img, torch.tensor(age), torch.tensor(bbox), torch.tensor(prob), torch.tensor(landmarks)
 
 
-def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, resize_shape=(32, 32), label_mode=False):
+def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.2, resize_shape=(32, 32), label_mode=False):
     
     # only *.chip.jpg is supported; No facial bbox, landmark, and probs provided for other images.
-    img_files = sorted(glob(os.path.join(parent_path, '*.chip.jpg')))[:500]
+    img_files = sorted(glob(os.path.join(parent_path, '*.chip.jpg')))
     
     imgs, ages, fn, bbox, prob, landmarks = [], [], [], [], [], [] # fn: file names
     
@@ -67,7 +67,7 @@ def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, r
                 continue # ignore this image; do not load
 
             bbox.append(t_bbox[0])
-            prob.append(t_prob)
+            prob.append(t_prob[0])
             landmarks.append(t_landmarks[0])
         
         img = io.imread(img_file)
@@ -86,7 +86,7 @@ def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, r
                 break
     
     # temporarily disable randomization for dataset
-    """
+    
     rand_idx = np.random.permutation(np.arange(len(img_files)))
     imgs = [imgs[a] for a in rand_idx]
     ages = [ages[a] for a in rand_idx]
@@ -94,7 +94,7 @@ def get_images(parent_path, age_thresh=(6, 18, 25, 35, 60), valid_percent=0.1, r
     bbox = [bbox[a] for a in rand_idx]
     prob = [prob[a] for a in rand_idx]
     landmarks = [landmarks[a] for a in rand_idx]
-    """
+    
     
     # debug printout
     print("Ignored images: ")

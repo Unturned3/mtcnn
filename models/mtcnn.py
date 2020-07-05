@@ -160,7 +160,10 @@ class ONet(nn.Module):
         # d: age classification task
         d = self.dense6_age(x)
         
+        # TODO: add softmax to age estimation
+        
         # need to modify this return line to include task d
+        # bbox, landmarks, prob
         return b, c, a, d
 
 
