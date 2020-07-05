@@ -1,6 +1,6 @@
-# Branch Note
 
-this branch implements loading the new labels into the training dataset.
+note: this repo is forked from https://github.com/timesler/facenet-pytorch
+this branch implements mtcnn training
 
 # Face Recognition Using Pytorch 
 [![Downloads](https://pepy.tech/badge/facenet-pytorch)](https://pepy.tech/project/facenet-pytorch)
