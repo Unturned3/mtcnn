@@ -51,7 +51,12 @@ class CIVDS(data.Dataset):  # CIVDS: Children in Vehicles Dataset
         return len(self.img)
     
     def __getitem__(self, idx):
-        img, prob, bbox = self.img[idx], self.age[idx], self.bbox[idx]
+        img, prob, bbox = self.img[idx], self.prob[idx], self.bbox[idx]
+        if prob == 0:
+            prob = np.array([0, 1], dtype='float32')
+        else:
+            prob = np.array([1, 0], dtype='float32')
+        
         if self.transforms is not None:
             img = self.transforms(img)
         return img, torch.tensor(prob), torch.tensor(bbox)
@@ -62,11 +67,12 @@ def get_images(img_path, anno_path, valid_percent=0.1, resize_shape=(12, 12)):
     scale = resize_shape[0] / 400 # assuming that original image size is 400x400
     
     file_names = sorted(glob(os.path.join(img_path, '*.jpg')))
-    anno_names = sorted(glob(os.path.join(anno_path, '*.xml')))
+    anno_names = sorted(glob(os.path.join(anno_path, '*.npy')))
+    anno_names.extend([''] * (len(file_names) - len(anno_names)))
     
     imgs, probs, bboxes = [], [], []
     
-    for cur_file, cur_anno in tqdm(zip(file_names, anno_names)):
+    for cur_file, cur_anno in tqdm(zip(file_names, anno_names), total=len(file_names)):
         
         img = io.imread(cur_file)
         
@@ -83,17 +89,19 @@ def get_images(img_path, anno_path, valid_percent=0.1, resize_shape=(12, 12)):
             a_bb = np.load(cur_anno)
             b_bb = np.array([int(round(k*scale)) for k in a_bb], dtype='int64')
             bboxes.append(b_bb)
-            
-        img = sktrsfm.resize(img, resize_shape, anti_aliasing=True, preserve_range=True)[..., :3]
-        imgs.append(torchvision.transforms.ToPILImage()(img.astype(np.uint8)))
+        
+        #img = sktrsfm.resize(img, resize_shape, anti_aliasing=True, preserve_range=True)[..., :3]
+        img = torchvision.transforms.ToPILImage()(img.astype(np.uint8))
+        img = img.resize(resize_shape)
+        imgs.append(img)
     
-    rand_idx = np.random.permutation(np.arange(len(img_files)))
+    rand_idx = np.random.permutation(np.arange(len(file_names)))
     imgs = [imgs[a] for a in rand_idx]
     probs = [probs[a] for a in rand_idx]
     bboxes = [bboxes[a] for a in rand_idx]
     
     vn = int(np.floor(len(imgs) * valid_percent))
-    return imgs[:vn], probs[:vn], bboxes[:vn], imgs[vn:], probs[vn:], bboxes[vn:]
+    return imgs[vn:], probs[vn:], bboxes[vn:], imgs[:vn], probs[:vn], bboxes[:vn]
 
 
 """
