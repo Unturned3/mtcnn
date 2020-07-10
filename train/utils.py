@@ -3,6 +3,8 @@ from glob import glob
 import numpy as np
 from tqdm import tqdm
 
+from PIL import Image
+
 # skimage
 from skimage import io, color
 import skimage.transform as sktrsfm
@@ -92,7 +94,7 @@ def get_images(img_path, anno_path, valid_percent=0.1, resize_shape=(12, 12)):
         
         #img = sktrsfm.resize(img, resize_shape, anti_aliasing=True, preserve_range=True)[..., :3]
         img = torchvision.transforms.ToPILImage()(img.astype(np.uint8))
-        img = img.resize(resize_shape)
+        img = img.resize(resize_shape, resample=Image.LANCZOS)
         imgs.append(img)
     
     rand_idx = np.random.permutation(np.arange(len(file_names)))
