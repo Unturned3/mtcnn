@@ -43,25 +43,28 @@ class CIVDS(data.Dataset):  # CIVDS: Children in Vehicles Dataset
     # img: children image
     # prob: whether the image contains a child or not
     # bbox: bounding box of the child in the image
-    def __init__(self, img, prob, bbox, trsfm=None):
+    def __init__(self, img, b_prob, b_box, f_prob, f_box, trsfm=None):
         self.img = img
-        self.prob = prob
-        self.bbox = bbox
+        self.b_prob = b_prob
+        self.b_box = b_box
+        self.f_prob = f_prob
+        self.f_box = f_box
         self.transforms = trsfm
     
     def __len__(self):
         return len(self.img)
     
     def __getitem__(self, idx):
-        img, prob, bbox = self.img[idx], self.prob[idx], self.bbox[idx]
+        img, b_prob, b_box, f_prob, f_box = self.img[idx], self.b_prob[idx], self.b_box[idx], self.f_prob[idx], self.f_box[idx]
+        """
         if prob == 0:
             prob = np.array([0, 1], dtype='float32')
         else:
             prob = np.array([1, 0], dtype='float32')
-        
+        """
         if self.transforms is not None:
             img = self.transforms(img)
-        return img, torch.tensor(prob), torch.tensor(bbox)
+        return img, torch.tensor(b_prob), torch.tensor(b_box), torch.tensor(f_prob), torch.tensor(f_box)
 
 
 def get_images(img_path, anno_path, valid_percent=0.1, resize_shape=(12, 12)):
@@ -72,7 +75,7 @@ def get_images(img_path, anno_path, valid_percent=0.1, resize_shape=(12, 12)):
     anno_names = sorted(glob(os.path.join(anno_path, '*.npy')))
     anno_names.extend([''] * (len(file_names) - len(anno_names)))
     
-    imgs, probs, bboxes = [], [], []
+    imgs, b_probs, b_boxes, f_probs, f_boxes = [], [], [], [], []
     
     for cur_file, cur_anno in tqdm(zip(file_names, anno_names), total=len(file_names)):
         
@@ -83,14 +86,24 @@ def get_images(img_path, anno_path, valid_percent=0.1, resize_shape=(12, 12)):
         
         age = os.path.splitext(os.path.basename(cur_file))[0].split('_')[0]
         
-        if age == 'n':
-            probs.append(0)
-            bboxes.append(np.array([0,0,0,0], dtype='int64'))
+        if age == 'n': # no child in image
+            b_probs.append(np.array([0, 1], dtype='float32'))
+            b_boxes.append(np.array([0,0,0,0], dtype='int32')) 
+            f_probs.append(np.array([0, 1], dtype='float32'))
+            f_boxes.append(np.array([0,0,0,0], dtype='int32'))
         else:
-            probs.append(1)
-            a_bb = np.load(cur_anno)
-            b_bb = np.array([int(round(k*scale)) for k in a_bb], dtype='int64')
-            bboxes.append(b_bb)
+            b_probs.append(np.array([1, 0], dtype='float32'))
+            o = np.load(cur_anno)
+            bb, fb = o[0], o[1]
+            bb = np.array([int(round(k*scale)) for k in bb], dtype='int32')
+            fb = np.array([int(round(k*scale)) for k in fb], dtype='int32')
+            b_boxes.append(bb)
+            
+            if (fb == np.array([0,0,0,0])).all():  # no face
+                f_probs.append(np.array([0, 1], dtype='float32'))
+            else:
+                f_probs.append(np.array([1, 0], dtype='float32'))
+            f_boxes.append(fb)
         
         #img = sktrsfm.resize(img, resize_shape, anti_aliasing=True, preserve_range=True)[..., :3]
         img = torchvision.transforms.ToPILImage()(img.astype(np.uint8))
@@ -99,11 +112,13 @@ def get_images(img_path, anno_path, valid_percent=0.1, resize_shape=(12, 12)):
     
     rand_idx = np.random.permutation(np.arange(len(file_names)))
     imgs = [imgs[a] for a in rand_idx]
-    probs = [probs[a] for a in rand_idx]
-    bboxes = [bboxes[a] for a in rand_idx]
+    b_probs = [b_probs[a] for a in rand_idx]
+    b_boxes = [b_boxes[a] for a in rand_idx]
+    f_probs = [f_probs[a] for a in rand_idx]
+    f_boxes = [f_boxes[a] for a in rand_idx]
     
     vn = int(np.floor(len(imgs) * valid_percent))
-    return imgs[vn:], probs[vn:], bboxes[vn:], imgs[:vn], probs[:vn], bboxes[:vn]
+    return imgs[vn:], b_probs[vn:], b_boxes[vn:], f_probs[vn:], f_boxes[vn:], imgs[:vn], b_probs[:vn], b_boxes[:vn], f_probs[:vn], f_boxes[:vn]
 
 
 """
