@@ -33,7 +33,7 @@ def xml_to_numpy(anno_path):
         bb[1] = int(root.find('ymin').text)
         bb[2] = int(root.find('xmax').text)
         bb[3] = int(root.find('ymax').text)
-        bb = bb.astype('int64')
+        bb = bb.astype('int32')
         np.save(os.path.splitext(ca)[0]+'.npy', bb)
     
     print('done!')
