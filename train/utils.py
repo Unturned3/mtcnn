@@ -56,12 +56,6 @@ class CIVDS(data.Dataset):  # CIVDS: Children in Vehicles Dataset
     
     def __getitem__(self, idx):
         img, b_prob, b_box, f_prob, f_box = self.img[idx], self.b_prob[idx], self.b_box[idx], self.f_prob[idx], self.f_box[idx]
-        """
-        if prob == 0:
-            prob = np.array([0, 1], dtype='float32')
-        else:
-            prob = np.array([1, 0], dtype='float32')
-        """
         if self.transforms is not None:
             img = self.transforms(img)
         return img, torch.tensor(b_prob), torch.tensor(b_box), torch.tensor(f_prob), torch.tensor(f_box)
