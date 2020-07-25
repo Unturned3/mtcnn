@@ -1,8 +1,5 @@
 
-# cd\_mtcnn\_new
+# train\_bnet
 
-this branch tests MTCNN training on custom dataset of children images
-
-the cd\_mtcnn branch is older than this one. This branch tests new methods
-of training the PNet and ONet, including cropping smaller images from the
-raw dataset, etc.
+this branch uses some of the pnet training code to train bnet,
+which specializes in identifying children bodies.
